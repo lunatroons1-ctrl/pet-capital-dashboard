@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pet Capital — Dashboard Milo 🐾</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Outfit', sans-serif; background: #f0f4f8; min-height: 100vh; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:translateY(0) } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* HEADER */
+    .header { background: linear-gradient(135deg, #2e7d32, #43a047); padding: 20px 28px; display: flex; align-items: center; gap: 16px; }
+    .header-icon { width: 48px; height: 48px; border-radius: 14px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 26px; }
+    .header h1 { color: #fff; font-size: 20px; font-weight: 900; }
+    .header p { color: rgba(255,255,255,0.75); font-size: 12px; font-weight: 600; margin-top: 2px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .refresh-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 10px; padding: 8px 14px; color: #fff; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; }
+    .refresh-btn:hover { background: rgba(255,255,255,0.3); }
+
+    /* SEARCH */
+    .search-bar { padding: 16px 28px; }
+    .search-bar input { width: 100%; max-width: 400px; border: 1.5px solid #ddd; border-radius: 12px; padding: 10px 16px; font-family: 'Outfit', sans-serif; font-size: 14px; background: #fff; color: #333; }
+    .search-bar input:focus { outline: none; border-color: #43a047; }
+
+    /* TABS */
+    .tabs { display: flex; gap: 4px; padding: 0 28px 16px; overflow-x: auto; }
+    .tab { border: none; border-radius: 10px; padding: 9px 18px; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.15s; background: #fff; color: #666; }
+    .tab.active { background: #2e7d32; color: #fff; }
+    .tab:hover:not(.active) { background: #e8f5e9; color: #2e7d32; }
+
+    /* CONTENT */
+    .content { padding: 0 28px 28px; animation: fadeUp 0.3s ease; }
+
+    /* STAT CARDS */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: #fff; border-radius: 16px; padding: 22px 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); display: flex; align-items: center; gap: 18px; animation: fadeUp 0.4s ease both; }
+    .stat-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; }
+    .stat-value { font-size: 28px; font-weight: 900; color: #1a1a2e; line-height: 1; }
+    .stat-label { font-size: 13px; font-weight: 700; color: #666; margin-top: 3px; }
+    .stat-sub { font-size: 11px; font-weight: 700; margin-top: 2px; }
+
+    /* TABLE */
+    .table-wrap { background: #fff; border-radius: 18px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); overflow: hidden; }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: 12px 16px; font-size: 11px; color: #9ca3af; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; text-align: left; background: #f9fafb; }
+    td { padding: 13px 16px; border-top: 1px solid #f3f4f6; font-size: 13px; color: #374151; }
+    td.bold { font-weight: 700; color: #1a1a2e; }
+    td.mono { font-family: monospace; font-size: 12px; color: #555; }
+    td.muted { font-size: 12px; color: #aaa; }
+
+    /* BADGE */
+    .badge { border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 800; letter-spacing: 0.3px; }
+    .badge-confirmada { background: #d1fae5; color: #065f46; }
+    .badge-pendiente  { background: #fef3c7; color: #92400e; }
+    .badge-cancelada  { background: #fee2e2; color: #991b1b; }
+
+    /* PRECIO BADGE */
+    .precio-badge { background: #e8f5e9; color: #2e7d32; border-radius: 8px; padding: 4px 10px; font-weight: 900; font-size: 13px; }
+
+    /* EMPTY */
+    .empty { text-align: center; padding: 48px 0; color: #aaa; }
+    .empty .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty p { font-weight: 700; font-size: 14px; }
+
+    /* LOADING */
+    .loading { text-align: center; padding: 60px; color: #aaa; }
+    .spinner { width: 36px; height: 36px; border: 3px solid #e8f5e9; border-top-color: #43a047; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+
+    /* FUERA HORARIO */
+    .fh-banner { background: linear-gradient(135deg, #1a237e, #283593); border-radius: 16px; padding: 18px 22px; display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+    .fh-banner h2 { color: #fff; font-weight: 800; font-size: 15px; }
+    .fh-banner p { color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 3px; }
+    .fh-card { background: #fff; border-radius: 18px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); overflow: hidden; margin-bottom: 16px; }
+    .fh-card-header { padding: 14px 20px; background: #f8f9ff; border-bottom: 1px solid #e8eaf6; font-weight: 800; font-size: 14px; color: #1a237e; }
+    .fh-price-badge { background: #e8eaf6; color: #1a237e; border-radius: 8px; padding: 4px 12px; font-weight: 900; font-size: 13px; }
+
+    /* STATUS BAR */
+    .status-bar { display: flex; align-items: center; gap: 8px; padding: 8px 28px; background: #f9fbe7; border-bottom: 1px solid #dcedc8; font-size: 12px; color: #558b2f; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-icon">🐾</div>
+  <div>
+    <h1>Milo — Pet Capital</h1>
+    <p>Dashboard de conversaciones y citas</p>
+  </div>
+  <div class="header-right">
+    <button class="refresh-btn" onclick="loadData()">🔄 Actualizar</button>
+  </div>
+</div>
+
+<!-- STATUS -->
+<div class="status-bar">
+  <span>📅</span> Lun–Sáb 9am–6pm · Dom y festivos 9am–5pm
+  <span id="last-update" style="margin-left:auto; color:#888;"></span>
+</div>
+
+<!-- SEARCH -->
+<div class="search-bar">
+  <input type="text" id="search" placeholder="🔍 Buscar por nombre, teléfono, servicio..." oninput="renderTab()" />
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="setTab('resumen', this)">📊 Resumen</button>
+  <button class="tab" onclick="setTab('clientes', this)">👥 Clientes</button>
+  <button class="tab" onclick="setTab('citas', this)">📅 Citas</button>
+  <button class="tab" onclick="setTab('cotizaciones', this)">💰 Cotizaciones</button>
+  <button class="tab" onclick="setTab('fuera', this)">🌙 Fuera de Horario</button>
+</div>
+
+<!-- CONTENT -->
+<div class="content" id="content">
+  <div class="loading"><div class="spinner"></div><p>Cargando datos...</p></div>
+</div>
+
+<script>
+const API = 'https://pet-capital-webhook-production.up.railway.app/dashboard';
+let data = { clientes: [], citas: [], cotizaciones: [] };
+let currentTab = 'resumen';
+
+const PRECIOS_FH = [
+  { categoria: '🔪 Castración — Orquiectomía (machos)', items: [
+    { servicio: 'Gatos', precio: '$150.000' },
+    { servicio: 'Perros 0–10 kg', precio: '$150.000' },
+    { servicio: 'Perros 10–20 kg', precio: '$200.000' },
+    { servicio: 'Perros 20–30 kg', precio: '$240.000' },
+    { servicio: 'Perros 30–40 kg', precio: '$300.000' },
+    { servicio: 'Perros +40 kg', precio: '$390.000' },
+  ]},
+  { categoria: '✂️ Esterilización — Ovariohisterectomía (hembras)', items: [
+    { servicio: 'Gatas', precio: '$200.000' },
+    { servicio: 'Perras 0–10 kg', precio: '$230.000' },
+    { servicio: 'Perras 10–20 kg', precio: '$280.000' },
+    { servicio: 'Perras 20–30 kg', precio: '$320.000' },
+    { servicio: 'Perras 30–40 kg', precio: '$360.000' },
+    { servicio: 'Perras +40 kg', precio: '$400.000' },
+  ]},
+  { categoria: '🦷 Profilaxis dental', items: [
+    { servicio: '0–10 kg', precio: '$150.000' },
+    { servicio: '10–20 kg', precio: '$170.000' },
+    { servicio: '20–30 kg', precio: '$200.000' },
+    { servicio: '30–40 kg', precio: '$250.000' },
+    { servicio: '40–50 kg', precio: '$300.000' },
+  ]},
+  { categoria: '📷 Diagnóstico por imagen', items: [
+    { servicio: 'Radiografía', precio: '$180.000' },
+    { servicio: 'Ecografía', precio: '$180.000' },
+  ]},
+];
+
+function fmt(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function badge(estado) {
+  const map = { confirmada: 'confirmada', pendiente: 'pendiente', cancelada: 'cancelada' };
+  const labels = { confirmada: 'Confirmada', pendiente: 'Pendiente', cancelada: 'Cancelada' };
+  const cls = map[estado] || 'pendiente';
+  return `<span class="badge badge-${cls}">${labels[estado] || estado}</span>`;
+}
+
+function filter(arr) {
+  const q = document.getElementById('search').value.toLowerCase();
+  if (!q) return arr;
+  return arr.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q)));
+}
+
+function empty(icon, text) {
+  return `<div class="empty"><div class="empty-icon">${icon}</div><p>${text}</p></div>`;
+}
+
+function setTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderTab();
+}
+
+function renderTab() {
+  const c = document.getElementById('content');
+  if (currentTab === 'resumen') c.innerHTML = renderResumen();
+  else if (currentTab === 'clientes') c.innerHTML = renderClientes();
+  else if (currentTab === 'citas') c.innerHTML = renderCitas();
+  else if (currentTab === 'cotizaciones') c.innerHTML = renderCotizaciones();
+  else if (currentTab === 'fuera') c.innerHTML = renderFuera();
+}
+
+function renderResumen() {
+  const confirmadas = data.citas.filter(c => c.estado === 'confirmada').length;
+  const pendientes = data.citas.filter(c => c.estado === 'pendiente').length;
+  const fh = data.citas.filter(c => c.tipo === 'fuera_horario').length;
+  return `
+    <div class="stats-grid">
+      <div class="stat-card" style="border-left:4px solid #43a047">
+        <div class="stat-icon" style="background:#43a04718">👥</div>
+        <div><div class="stat-value">${data.clientes.length}</div><div class="stat-label">Clientes registrados</div></div>
+      </div>
+      <div class="stat-card" style="border-left:4px solid #1e88e5">
+        <div class="stat-icon" style="background:#1e88e518">📅</div>
+        <div><div class="stat-value">${data.citas.length}</div><div class="stat-label">Citas totales</div><div class="stat-sub" style="color:#1e88e5">${confirmadas} confirmadas · ${pendientes} pendientes</div></div>
+      </div>
+      <div class="stat-card" style="border-left:4px solid #f59e0b">
+        <div class="stat-icon" style="background:#f59e0b18">💰</div>
+        <div><div class="stat-value">${data.cotizaciones.length}</div><div class="stat-label">Cotizaciones enviadas</div></div>
+      </div>
+      <div class="stat-card" style="border-left:4px solid #7c3aed">
+        <div class="stat-icon" style="background:#7c3aed18">🌙</div>
+        <div><div class="stat-value">${fh}</div><div class="stat-label">Citas fuera de horario</div></div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <div style="padding:16px 20px;border-bottom:1px solid #f3f4f6;font-weight:800;font-size:14px;color:#1a1a2e">📅 Últimas citas</div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Dueño</th><th>Mascota</th><th>Servicio</th><th>Horario</th><th>Estado</th><th>Fecha</th></tr></thead>
+          <tbody>
+            ${data.citas.slice(0,5).map(c => `
+              <tr>
+                <td class="bold">${c.nombre_dueno || '—'}</td>
+                <td>${c.nombre_mascota || '—'}</td>
+                <td>${c.servicio || '—'}</td>
+                <td>${c.horario_preferido || '—'}</td>
+                <td>${badge(c.estado)}</td>
+                <td class="muted">${fmt(c.creado_en)}</td>
+              </tr>`).join('') || `<tr><td colspan="6">${empty('📅', 'Sin citas aún')}</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function renderClientes() {
+  const rows = filter(data.clientes);
+  return `<div class="table-wrap"><div class="table-scroll"><table>
+    <thead><tr><th>Dueño</th><th>Mascota</th><th>Especie</th><th>Raza</th><th>Teléfono</th><th>Fecha</th></tr></thead>
+    <tbody>
+      ${rows.length ? rows.map(c => `<tr>
+        <td class="bold">${c.nombre_dueno || '—'}</td>
+        <td>${c.nombre_mascota || '—'}</td>
+        <td>${c.especie || '—'}</td>
+        <td>${c.raza || '—'}</td>
+        <td class="mono">${c.telefono}</td>
+        <td class="muted">${fmt(c.creado_en)}</td>
+      </tr>`).join('') : `<tr><td colspan="6">${empty('👥', 'Sin clientes aún')}</td></tr>`}
+    </tbody>
+  </table></div></div>`;
+}
+
+function renderCitas() {
+  const rows = filter(data.citas);
+  return `<div class="table-wrap"><div class="table-scroll"><table>
+    <thead><tr><th>Dueño</th><th>Mascota</th><th>Servicio</th><th>Horario</th><th>Estado</th><th>Fecha</th></tr></thead>
+    <tbody>
+      ${rows.length ? rows.map(c => `<tr>
+        <td class="bold">${c.nombre_dueno || '—'}</td>
+        <td>${c.nombre_mascota || '—'}</td>
+        <td>${c.servicio || '—'}</td>
+        <td>${c.horario_preferido || '—'}</td>
+        <td>${badge(c.estado)}</td>
+        <td class="muted">${fmt(c.creado_en)}</td>
+      </tr>`).join('') : `<tr><td colspan="6">${empty('📅', 'Sin citas aún')}</td></tr>`}
+    </tbody>
+  </table></div></div>`;
+}
+
+function renderCotizaciones() {
+  const rows = filter(data.cotizaciones);
+  return `<div class="table-wrap"><div class="table-scroll"><table>
+    <thead><tr><th>Teléfono</th><th>Servicio</th><th>Precio</th><th>Fecha</th></tr></thead>
+    <tbody>
+      ${rows.length ? rows.map(c => `<tr>
+        <td class="mono">${c.telefono}</td>
+        <td class="bold">${c.servicio || '—'}</td>
+        <td><span class="precio-badge">${c.precio || '—'}</span></td>
+        <td class="muted">${fmt(c.creado_en)}</td>
+      </tr>`).join('') : `<tr><td colspan="4">${empty('💰', 'Sin cotizaciones aún')}</td></tr>`}
+    </tbody>
+  </table></div></div>`;
+}
+
+function renderFuera() {
+  const fhCitas = data.citas.filter(c => c.tipo === 'fuera_horario');
+  return `
+    <div class="fh-banner">
+      <span style="font-size:28px">🌙</span>
+      <div><h2>Tarifas fuera del horario normal</h2><p>Antes de las 9am · después de las 6pm (semana) · después de las 5pm (dom/festivos)</p></div>
+    </div>
+    ${PRECIOS_FH.map(cat => `
+      <div class="fh-card">
+        <div class="fh-card-header">${cat.categoria}</div>
+        <table><tbody>
+          ${cat.items.map((item, i) => `
+            <tr style="${i > 0 ? 'border-top:1px solid #f3f4f6' : ''}">
+              <td style="padding:12px 20px;font-weight:600;color:#374151">${item.servicio}</td>
+              <td style="padding:12px 20px;text-align:right"><span class="fh-price-badge">${item.precio}</span></td>
+            </tr>`).join('')}
+        </tbody></table>
+      </div>`).join('')}
+    <div class="fh-card">
+      <div class="fh-card-header">📅 Citas agendadas fuera de horario</div>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Dueño</th><th>Mascota</th><th>Servicio</th><th>Horario</th><th>Estado</th></tr></thead>
+        <tbody>
+          ${fhCitas.length ? fhCitas.map(c => `<tr>
+            <td class="bold">${c.nombre_dueno || '—'}</td>
+            <td>${c.nombre_mascota || '—'}</td>
+            <td>${c.servicio || '—'}</td>
+            <td>${c.horario_preferido || '—'}</td>
+            <td>${badge(c.estado)}</td>
+          </tr>`).join('') : `<tr><td colspan="5">${empty('🌙', 'Sin citas fuera de horario')}</td></tr>`}
+        </tbody>
+      </table></div>
+    </div>`;
+}
+
+async function loadData() {
+  document.getElementById('content').innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando datos...</p></div>';
+  try {
+    const res = await fetch(API);
+    data = await res.json();
+    document.getElementById('last-update').textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-CO');
+  } catch(e) {
+    console.error(e);
+  }
+  renderTab();
+}
+
+loadData();
+</script>
+</body>
+</html>
